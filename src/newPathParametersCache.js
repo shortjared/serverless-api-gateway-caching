@@ -1,3 +1,4 @@
+const isEmpty = require('lodash.isempty');
 const { retrieveRestApiId } = require('./restApiId');
 
 let settings, serverless, restApiId;
@@ -23,15 +24,19 @@ const getMethodResourceIdfor = async (endpointSettings) => {
 const getMethodFor = async (endpointSettings) => {
   let methodResourceId = await getMethodResourceIdfor(endpointSettings);
   const params = {
-    httpMethod: endpointSettings.method,
+    httpMethod: endpointSettings.method.toUpperCase(),
     restApiId,
     resourceId: methodResourceId
   };
   let method = await serverless.providers.aws.request('APIGateway', 'getMethod', params, settings.stage, settings.region);
+  method.id = methodResourceId;
   return method;
 }
 
 const addRequestParametersToMethod = async (method, requestParametersToAdd) => {
+  if (isEmpty(requestParametersToAdd)) {
+    return;
+  }
   const params = {
     restApiId,
     resourceId: method.id,
@@ -41,7 +46,7 @@ const addRequestParametersToMethod = async (method, requestParametersToAdd) => {
   for (let requestParameter of requestParametersToAdd) {
     params.patchOperations.push({
       op: 'add',
-      path: `/requestParameters/method.${requestParameter}`
+      path: `/requestParameters/${requestParameter}`
     });
   }
 
@@ -51,15 +56,21 @@ const addRequestParametersToMethod = async (method, requestParametersToAdd) => {
 
 const updateRequestParametersFor = async (method, endpointSettings) => {
   let requestParametersToAdd = [];
+  if (isEmpty(endpointSettings.cacheKeyParameters)) {
+    return;
+  }
   for (let cacheKeyParameter of endpointSettings.cacheKeyParameters) {
-    if (!method.requestParameters[`method.${cacheKeyParameter.name}`]) {
-      requestParametersToAdd.push(cacheKeyParameter.name);
+    if (isEmpty(method.requestParameters) || method.requestParameters[`method.${cacheKeyParameter.name}`] === undefined) {
+      requestParametersToAdd.push(`method.${cacheKeyParameter.name}`);
     }
   }
   await addRequestParametersToMethod(method, requestParametersToAdd);
 }
 
-const updateCacheKeyParametersForMethodIntegration = async (operation, method, cacheKeyParametersToRemove) => {
+const updateCacheKeyParametersForMethodIntegration = async (operation, method, cacheKeyParameters) => {
+  if (isEmpty(cacheKeyParameters)) {
+    return;
+  }
   let params = {
     httpMethod: method.httpMethod,
     restApiId: restApiId,
@@ -67,7 +78,7 @@ const updateCacheKeyParametersForMethodIntegration = async (operation, method, c
     patchOperations: []
   }
 
-  for (let cacheKeyParameter of cacheKeyParametersToRemove) {
+  for (let cacheKeyParameter of cacheKeyParameters) {
     params.patchOperations.push({
       op: operation,
       path: `/cacheKeyParameters/method.${cacheKeyParameter}`
@@ -81,14 +92,18 @@ const updateCacheKeyParametersForMethodIntegration = async (operation, method, c
 const updateCacheKeyParametersFor = async (method, endpointSettings) => {
   let cacheKeyParametersToAdd = [];
   let cacheKeyParametersToRemove = [];
-  for (let cacheKeyParameter of endpointSettings.cacheKeyParameters) {
-    if (!method.methodIntegration.cacheKeyParameters.includes(`method.${cacheKeyParameter.name}`)) {
-      cacheKeyParametersToAdd.push(cacheKeyParameter.name);
+  if (isEmpty(endpointSettings.cacheKeyParameters)) {
+    cacheKeyParametersToRemove = method.methodIntegration.cacheKeyParameters;
+  } else {
+    for (let cacheKeyParameter of endpointSettings.cacheKeyParameters) {
+      if (!method.methodIntegration.cacheKeyParameters.includes(`method.${cacheKeyParameter.name}`)) {
+        cacheKeyParametersToAdd.push(cacheKeyParameter.name);
+      }
     }
-  }
-  for (let cacheKeyParameter of method.methodIntegration.cacheKeyParameters) {
-    if (!endpointSettings.cacheKeyParameters.find(p => p.name == cacheKeyParameter)) {
-      cacheKeyParametersToRemove.push(cacheKeyParameter);
+    for (let methodCacheKeyParameter of method.methodIntegration.cacheKeyParameters) {
+      if (!endpointSettings.cacheKeyParameters.find(p => methodCacheKeyParameter == `method.${p.name}`)) {
+        cacheKeyParametersToRemove.push(methodCacheKeyParameter);
+      }
     }
   }
 
@@ -105,7 +120,7 @@ const updateCacheSettingsFor = async (endpointSettings) => {
 
 const updatePathParametersCacheSettings = async (inputSettings, inputServerless) => {
   // do nothing if caching is not enabled
-  if (!settings.cachingEnabled) {
+  if (!inputSettings.cachingEnabled) {
     return;
   }
 
