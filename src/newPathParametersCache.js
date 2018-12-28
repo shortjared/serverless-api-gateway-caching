@@ -4,14 +4,25 @@ const { retrieveRestApiId } = require('./restApiId');
 let cachedResources;
 
 const getMethodResourceIdfor = async (restApiId, endpointSettings, settings, serverless) => {
+  const params = {
+    restApiId
+  }
   let resources = cachedResources ? cachedResources :
     await serverless.providers.aws.request('APIGateway', 'getResources', params, settings.stage, settings.region);
 
   cachedResources = resources;
+
+  let { method, path } = endpointSettings;
+  let methodResource = resources.items.find(r => r.path.toLowerCase() == path.toLowerCase() && r.resourceMethods[method.toUpperCase()]);
+  if (!methodResource) {
+    serverless.cli.log(`[serverless-api-gateway-caching] The method '${method.toUpperCase()} ${path}' could not be found in Rest API with Id ${restApiId}`);
+  }
+  return methodResource.id;
 }
 
 const getMethodFor = async (restApiId, endpointSettings, settings, serverless) => {
   let methodResourceId = await getMethodResourceIdfor(restApiId, endpointSettings, settings, serverless);
+  console.log(methodResourceId);
 }
 
 const updateCacheSettingsFor = async (restApiId, endpointSettings, settings, serverless) => {
@@ -27,7 +38,7 @@ const updatePathParametersCacheSettings = async (settings, serverless) => {
   let restApiId = await retrieveRestApiId(serverless, settings);
 
   for (let endpointSettings of settings.endpointSettings) {
-    await updateCacheSettingsFor(endpointSettings, restApiId, settings, serverless);
+    await updateCacheSettingsFor(restApiId, endpointSettings, settings, serverless);
   }
 }
 module.exports = updatePathParametersCacheSettings;
