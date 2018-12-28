@@ -3,6 +3,8 @@
 const get = require('lodash.get');
 const REST_API_ID_KEY = 'RestApiIdForApigCaching';
 
+let cachedRestApiId;
+
 const getConfiguredRestApiId = (serverless) => {
   return get(serverless, 'service.provider.apiGateway.restApiId')
 }
@@ -30,6 +32,9 @@ const outputRestApiIdTo = (serverless) => {
 };
 
 const retrieveRestApiId = async (serverless, settings) => {
+  if (cachedRestApiId) {
+    return cachedRestApiId;
+  }
   const stackName = serverless.providers.aws.naming.getStackName(settings.stage);
 
   const cloudFormation = await serverless.providers.aws.request('CloudFormation', 'describeStacks', { StackName: stackName },
@@ -39,6 +44,7 @@ const retrieveRestApiId = async (serverless, settings) => {
   const outputs = cloudFormation.Stacks[0].Outputs;
   const restApiKey = outputs.find(({ OutputKey }) => OutputKey === REST_API_ID_KEY).OutputValue;
 
+  cachedRestApiId = restApiKey;
   return restApiKey;
 };
 

@@ -1,0 +1,11 @@
+{
+  "id": "7tr9uw",
+  "parentId": "3rk224",
+  "pathPart": "{pawId}",
+  "path": "/cats/{pawId}",
+  "resourceMethods": {
+    "DELETE": {},
+    "GET": {},
+    "POST": {}
+  }
+}

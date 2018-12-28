@@ -1,8 +1,9 @@
 'use strict';
 
 const ApiGatewayCachingSettings = require('./ApiGatewayCachingSettings');
-const pathParametersCache = require('./pathParametersCache');
+//const pathParametersCache = require('./pathParametersCache');
 const updateStageCacheSettings = require('./stageCache');
+const updatePathParametersCacheSettings = require('./newPathParametersCache');
 const { restApiExists, outputRestApiIdTo } = require('./restApiId');
 
 class ApiGatewayCachingPlugin {
@@ -35,15 +36,16 @@ class ApiGatewayCachingPlugin {
       return;
     }
 
-    return pathParametersCache.addPathParametersCacheConfig(this.settings, this.serverless);
+    //return pathParametersCache.addPathParametersCacheConfig(this.settings, this.serverless);
   }
 
-  updateStage() {
+  async updateStage() {
     if (!this.thereIsARestApi) {
       this.serverless.cli.log(`[serverless-api-gateway-caching] No Rest API found. Caching settings will not be updated.`);
       return;
     }
-    return updateStageCacheSettings(this.settings, this.serverless);
+    await updateStageCacheSettings(this.settings, this.serverless);
+    await updatePathParametersCacheSettings(this.settings, this.serverless);
   }
 }
 

@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "id": "3rk224",
+      "parentId": "pth41cijb3",
+      "pathPart": "cats",
+      "path": "/cats",
+      "resourceMethods": {
+        "GET": {}
+      }
+    },
+    {
+      "id": "7tr9uw",
+      "parentId": "3rk224",
+      "pathPart": "{pawId}",
+      "path": "/cats/{pawId}",
+      "resourceMethods": {
+        "DELETE": {},
+        "GET": {},
+        "POST": {}
+      }
+    },
+    {
+      "id": "pth41cijb3",
+      "path": "/"
+    }
+  ]
+}

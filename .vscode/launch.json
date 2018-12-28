@@ -16,5 +16,11 @@
         "--color"
       ]
     },
+    {
+      "name": "Test bench",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceRoot}/testbench.js"
+    }
   ]
 }

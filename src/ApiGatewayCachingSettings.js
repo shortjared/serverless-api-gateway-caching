@@ -1,4 +1,3 @@
-const isEmpty = require('lodash.isempty');
 const get = require('lodash.get');
 const { Ignore, IgnoreWithWarning, Fail } = require('./UnauthorizedCacheControlHeaderStrategy');
 
