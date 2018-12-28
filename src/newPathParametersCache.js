@@ -83,7 +83,17 @@ const updateCacheKeyParametersForMethodIntegration = async (operation, method, c
       op: operation,
       path: `/cacheKeyParameters/method.${cacheKeyParameter}`
     });
+    params.patchOperations.push({
+      op: operation,
+      path: `/requestParameters/integration.${cacheKeyParameter}`,
+      value: `method.${cacheKeyParameter}`
+    });
   }
+  params.patchOperations.push({
+    op: 'replace',
+    path: `/cacheNamespace`,
+    value: `${method.id}CacheNS`
+  });
 
   serverless.cli.log(`[serverless-api-gateway-caching] [DEBUG] updateIntegration params '${JSON.stringify(params)}'`);
   await serverless.providers.aws.request('APIGateway', 'updateIntegration', params, settings.stage, settings.region);
@@ -97,12 +107,12 @@ const updateCacheKeyParametersFor = async (method, endpointSettings) => {
   } else {
     for (let cacheKeyParameter of endpointSettings.cacheKeyParameters) {
       if (!method.methodIntegration.cacheKeyParameters.includes(`method.${cacheKeyParameter.name}`)) {
-        cacheKeyParametersToAdd.push(cacheKeyParameter.name);
+        cacheKeyParametersToAdd.push(`${cacheKeyParameter.name}`);
       }
     }
     for (let methodCacheKeyParameter of method.methodIntegration.cacheKeyParameters) {
       if (!endpointSettings.cacheKeyParameters.find(p => methodCacheKeyParameter == `method.${p.name}`)) {
-        cacheKeyParametersToRemove.push(methodCacheKeyParameter);
+        cacheKeyParametersToRemove.push(methodCacheKeyParameter.slice(7));
       }
     }
   }
