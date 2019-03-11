@@ -483,6 +483,34 @@ describe('Updating stage cache settings', () => {
     }
   });
 
+  describe(`When request param integration for AWS_PROXY integration type`, () => {
+    before(async () => {
+      let endpointWithCaching = given.a_serverless_function('do-anything-to-cat')
+        .withHttpEndpoint('any', '/cat', { enabled: true, ttlInSeconds: 45 }, "AWS_PROXY");
+
+      serverless = given.a_serverless_instance()
+        .withApiGatewayCachingConfig(true, '0.5', 60)
+        .withFunction(endpointWithCaching)
+        .forStage('somestage');
+      settings = new ApiGatewayCachingSettings(serverless);
+
+      restApiId = await given.a_rest_api_id_for_deployment(serverless, settings);
+
+      await when_updating_stage_cache_settings(settings, serverless);
+
+      requestsToAws = serverless.getRequestsToAws();
+      apiGatewayRequest = requestsToAws.find(r => r.awsService == apiGatewayService && r.method == updateStageMethod);
+    });
+
+    it(`should disable caching for the endpoint`, () => {
+      expect(apiGatewayRequest.properties).to.deep.include({
+        op: 'replace',
+        path: `/~1cats/GET/caching/enabled`,
+        value: 'false'
+      });
+    });
+  })
+
   describe('When an http endpoint is defined in shorthand', () => {
     before(async () => {
       let endpoint = given.a_serverless_function('list-cats')

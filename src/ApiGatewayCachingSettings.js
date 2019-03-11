@@ -63,6 +63,7 @@ class ApiGatewayEndpointCachingSettings {
     this.dataEncrypted = cachingConfig.dataEncrypted || globalSettings.dataEncrypted;
     this.cacheTtlInSeconds = cachingConfig.ttlInSeconds || globalSettings.cacheTtlInSeconds;
     this.cacheKeyParameters = cachingConfig.cacheKeyParameters;
+    this.integration = event.http.integration || 'AWS_PROXY';
 
     if (!cachingConfig.perKeyInvalidation) {
       this.perKeyInvalidation = globalSettings.perKeyInvalidation;

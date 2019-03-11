@@ -13,7 +13,7 @@
     "AuthorizationType": "NONE",
     "Integration": {
       "IntegrationHttpMethod": "POST",
-      "Type": "AWS_PROXY",
+      "Type": "AWS_LAMBDA",
       "Uri": {
         "Fn::Join": [
           "",
